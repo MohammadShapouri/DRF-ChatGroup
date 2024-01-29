@@ -1,0 +1,1040 @@
+{
+	"info": {
+		"_postman_id": "9cf4089e-a1cc-4b5a-b6f7-8275f12fab4f",
+		"name": "DRF-SocialMedia",
+		"description": "A user account management system based on the phone number validation in django rest framework.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22997140"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Verifications",
+					"item": [
+						{
+							"name": "Verify Account Verification OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "otp",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/verify-account",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"verify-account"
+									]
+								},
+								"description": "#### Used for verifying account.\n\n**Body:**\n\n'_otp_': pass OTP code here."
+							},
+							"response": []
+						},
+						{
+							"name": "Verify New Phone Number",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "otp",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "127.0.0.1:8000/api/users/{{User ID}}/verify-new-phone-number",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"verify-new-phone-number"
+									]
+								},
+								"description": "#### Used for verifying new phone number.\n\n**Body:**\n\n'_otp_': pass OTP code here."
+							},
+							"response": []
+						},
+						{
+							"name": "Resend New Phone Number Verification OTP",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "127.0.0.1:8000/api/users/{{User ID}}/resend-new-phone-number-verification-otp",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"resend-new-phone-number-verification-otp"
+									]
+								},
+								"description": "#### Used for resending new phone number verification OTP code.\n\n_** This API Needs Bearer Token._"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Reset Password",
+					"item": [
+						{
+							"name": "Step 1 - Request Reset Password OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "phone_number",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/request-reset-password-otp",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"request-reset-password-otp"
+									]
+								},
+								"description": "#### Used for sending a request for reset password OTP code.\n\n**Body:**\n\n'_phone_number_': pass phone_number here."
+							},
+							"response": []
+						},
+						{
+							"name": "Optional Step - Verify Reset Password OTP",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "otp",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/verify-reset-password-otp",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"verify-reset-password-otp"
+									]
+								},
+								"description": "#### Used for verifying OTP code.\n\n_** Using this API is not essential during reset password process_\n\n**Body:**\n\n'_otp_': pass OTP code here."
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2 - Reset Password",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "otp",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "new_password",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "confirm_new_password",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/reset-password",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"reset-password"
+									]
+								},
+								"description": "#### Used for reseting password.\n\n**Body:**\n\n'_otp_': pass OTP code here.\n\n'_new_password_': pass new password here.\n\n'_confirm_new_password_': pass new password here."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Log in",
+					"item": [
+						{
+							"name": "Log in (Access Token Generator)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "phone_number",
+											"value": "09335494444",
+											"type": "text"
+										},
+										{
+											"key": "password",
+											"value": "1989",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/token/",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"token",
+										""
+									]
+								},
+								"description": "#### Used for logging in.\n\n_** Use access token for logging in and refresh token for regenerating access token._\n\n**Body:**\n\n'_phone_number_': pass phone number here.\n\n'_password_': pass password here."
+							},
+							"response": []
+						},
+						{
+							"name": "Log in (Renew access Token)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "refresh",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/token/refresh/",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"token",
+										"refresh",
+										""
+									]
+								},
+								"description": "#### Used for regenerating access token without phone number and password.\n\n_** Use access token for logging in and refresh token for regenerating access token._\n\n**Body:**\n\n'_refresh_': pass refresh token here."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Profile Pictures",
+					"item": [
+						{
+							"name": "Get All Profile Pictures",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/profile-pictures",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"profile-pictures"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Specific Profile Pictures",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/profile-pictures/{{Picture ID}}",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"profile-pictures",
+										"{{Picture ID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Profile Picture",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "photo",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "is_default_pic",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "user",
+											"value": "2",
+											"type": "text",
+											"disabled": true
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/profile-pictures/",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"profile-pictures",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Profile Picture",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "photo",
+											"type": "file",
+											"src": []
+										},
+										{
+											"key": "is_default_pic",
+											"value": "",
+											"type": "text"
+										},
+										{
+											"key": "creation_date",
+											"value": "",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/profile-pictures/{{Picture ID}}",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"profile-pictures",
+										"{{Picture ID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Profile Picture",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://127.0.0.1:8000/api/users/{{User ID}}/profile-pictures/{{Picture ID}}",
+									"protocol": "http",
+									"host": [
+										"127",
+										"0",
+										"0",
+										"1"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"users",
+										"{{User ID}}",
+										"profile-pictures",
+										"{{Picture ID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "127.0.0.1:8000/api/users",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "first_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "last_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "127.0.0.1:8000/api/users/{{User ID}}/",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{User ID}}",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "127.0.0.1:8000/api/users/{{User ID}}/",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{User ID}}",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "first_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "last_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "confirm_password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_superuser",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_active",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_account_verified",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_staff",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "127.0.0.1:8000/api/users/",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "old_password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "new_password",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "confirm_new_password",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "127.0.0.1:8000/api/users/{{User ID}}/change-password",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{User ID}}",
+								"change-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "127.0.0.1:8000/api/users/{{User ID}}",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{User ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat Group",
+			"item": [
+				{
+					"name": "Get All ChatGroups",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific ChatGroups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/2",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update ChatGroup",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzAyNjY4ODk5LCJpYXQiOjE3MDI2NjE2OTksImp0aSI6IjI4N2FmMzRlYzc3NzRiNTViY2U3MmM2NzI4NmQ3ZjFjIiwidXNlcl9pZCI6NH0.vihoCLX1UsHrbKT9csQbD2nBLIuRrCxaxdZ3VxuTy0A",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "group_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "bio",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "group_special_username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "group_random_username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_public",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_forward_allowed",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "creation_date",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"2",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create ChatGroup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "group_name",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "bio",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "group_special_username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "group_random_username",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_public",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "is_forward_allowed",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "creation_date",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "User ID",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "Picture ID",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
