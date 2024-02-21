@@ -1,4 +1,5 @@
 from .acceptable_OTP_values import least_acceptable_OTP_length, most_acceptable_OTP_length, least_acceptable_expire_after_time, least_acceptable_max_possible_try
+from django.conf import settings
 
 
 
@@ -46,25 +47,37 @@ class BaseOTPConfigManager:
             self.validate_config_keys(list(config.keys()))
 
         if self.default_OTP_length == None:
-            self.default_OTP_length = self.get_numeric_variable('default_OTP_length', config.get('default_OTP_length'), self.default_config.get('default_OTP_length'))
+            self.default_OTP_length = self.get_numeric_variable('default_OTP_length', config.get('default_OTP_length'))
         if self.default_max_possible_try == None:
-            self.default_max_possible_try = self.get_numeric_variable('default_max_possible_try', config.get('default_max_possible_try'), self.default_config.get('default_max_possible_try'))
+            self.default_max_possible_try = self.get_numeric_variable('default_max_possible_try', config.get('default_max_possible_try'))
         if self.default_expire_after == None:
-            self.default_expire_after = self.get_numeric_variable('default_expire_after', config.get('default_expire_after'), self.default_config.get('default_expire_after'))
+            self.default_expire_after = self.get_numeric_variable('default_expire_after', config.get('default_expire_after'))
         if len(self.config_profiles.keys()) == 0:
-            self.config_profiles = self.parse_config_profile(config.get('config_profiles'), self.default_config.get('config_profiles'))
+            self.config_profiles = self.parse_config_profile(config.get('config_profiles'))
 
 
-    def parse_config_profile(self, config_profiles, default_config_profiles):
+    def parse_config_profile(self, config_profiles):
+        default_config_profiles = self.default_config.get('config_profiles')
         selected_config_profiles = dict()
+        settings_config_profiles = dict()
 
-        if config_profiles == None and default_config_profiles == None:
+        try:
+            settings_config_profiles = settings.OTP_MODULE_CONFIG
+        except AttributeError:
+            pass
+        settings_config_profiles = settings_config_profiles.get('config_profiles')
+
+
+        if config_profiles == None and default_config_profiles == None and settings_config_profiles == None:
             raise ValueError('None is not acceptable, Enter a dict as config_profiles or inital config_profiles.')
 
         if config_profiles != None:
             selected_config_profiles = config_profiles
         else:
-            selected_config_profiles = default_config_profiles
+            if settings_config_profiles != None:
+                selected_config_profiles = settings_config_profiles
+            else:
+                selected_config_profiles = default_config_profiles
 
         self.validate_config(selected_config_profiles)
 
@@ -83,15 +96,26 @@ class BaseOTPConfigManager:
 
 
 
-    def get_numeric_variable(self, target, variable, default):
-        if variable == None and default == None:
+    def get_numeric_variable(self, target, variable):
+        default = self.default_config.get(target)
+        settings_value = None
+        try:
+            settings_value = settings.OTP_MODULE_CONFIG.get(target)
+        except AttributeError:
+            pass
+
+        if variable == None and default == None and settings_value == None:
             raise ValueError('None is not acceptable, Enter a number as variable or default or setting variable')
 
         self.validate_numeric_values(target, variable)
+        self.validate_numeric_values(target, settings_value)
         self.validate_numeric_values(target, default)
 
         if variable != None:
             return int(variable)
+        else:
+            if settings_value != None:
+                return int(settings_value)
         return int(default)
 
 
@@ -171,33 +195,67 @@ class BaseOTPConfigManager:
 
 
     def parse_timer_counter_based_config_detail(self, each_config_profile_details):
+        parsed_config_profile_details = dict()
+
+        parsed_config_profile_details['OTP_type'] = each_config_profile_details.get('OTP_type')
+        parsed_config_profile_details['OTP_usage'] = each_config_profile_details.get('OTP_usage')
+
         if each_config_profile_details.get('max_possible_try') == None:
-            each_config_profile_details['max_possible_try'] = self.default_max_possible_try
+            parsed_config_profile_details['max_possible_try'] = self.default_max_possible_try
+        else:
+            parsed_config_profile_details['max_possible_try'] = each_config_profile_details.get('max_possible_try')
+
         if each_config_profile_details.get('expire_after') == None:
-            each_config_profile_details['expire_after'] = self.default_expire_after
+            parsed_config_profile_details['expire_after'] = self.default_expire_after
+        else:
+            parsed_config_profile_details['expire_after'] = each_config_profile_details.get('expire_after')
+
         if each_config_profile_details.get('OTP_length') == None:
-            each_config_profile_details['OTP_length'] = self.default_OTP_length
-        return each_config_profile_details
+            parsed_config_profile_details['OTP_length'] = self.default_OTP_length
+        else:
+            parsed_config_profile_details['OTP_length'] = each_config_profile_details.get('OTP_length')
+
+        return parsed_config_profile_details
 
 
 
     def parse_counter_based_config_detail(self, each_config_profile_details):
-        each_config_profile_details.pop('expire_after', None)
+        parsed_config_profile_details = dict()
+
+        parsed_config_profile_details['OTP_type'] = each_config_profile_details.get('OTP_type')
+        parsed_config_profile_details['OTP_usage'] = each_config_profile_details.get('OTP_usage')
+
         if each_config_profile_details.get('max_possible_try') == None:
-            each_config_profile_details['max_possible_try'] = self.default_max_possible_try
+            parsed_config_profile_details['max_possible_try'] = self.default_max_possible_try
+        else:
+            parsed_config_profile_details['max_possible_try'] = each_config_profile_details.get('max_possible_try')
+
         if each_config_profile_details.get('OTP_length') == None:
-            each_config_profile_details['OTP_length'] = self.default_OTP_length
-        return each_config_profile_details
+            parsed_config_profile_details['OTP_length'] = self.default_OTP_length
+        else:
+            parsed_config_profile_details['OTP_length'] = each_config_profile_details.get('OTP_length')
+
+        return parsed_config_profile_details
 
 
 
     def parse_timer_based_config_detail(self, each_config_profile_details):
-        each_config_profile_details.pop('max_possible_try', None)
+        parsed_config_profile_details = dict()
+
+        parsed_config_profile_details['OTP_type'] = each_config_profile_details.get('OTP_type')
+        parsed_config_profile_details['OTP_usage'] = each_config_profile_details.get('OTP_usage')
+
         if each_config_profile_details.get('expire_after') == None:
-            each_config_profile_details['expire_after'] = self.default_expire_after
+            parsed_config_profile_details['expire_after'] = self.default_expire_after
+        else:
+            parsed_config_profile_details['expire_after'] = each_config_profile_details.get('expire_after')
+
         if each_config_profile_details.get('OTP_length') == None:
-            each_config_profile_details['OTP_length'] = self.default_OTP_length
-        return each_config_profile_details
+            parsed_config_profile_details['OTP_length'] = self.default_OTP_length
+        else:
+            parsed_config_profile_details['OTP_length'] = each_config_profile_details.get('OTP_length')
+
+        return parsed_config_profile_details
 
 
         

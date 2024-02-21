@@ -11,12 +11,25 @@ from extentions.regexValidators.random_link_generator import CallableRandomLinkG
 
 
 class ChatGroup(models.Model):
+    WRITING_ACCESS = (
+        ('only_owner', 'Only owner'),
+        ('only_owner_and_admins', 'only owner and admins'),
+        ('all', 'All types of users'),
+    )
+    MEDIA_UPLOADING_ACCESS = (
+        ('only_owner', 'Only owner'),
+        ('only_owner_and_admins', 'only owner and admins'),
+        ('all', 'All types of users'),
+    )
+
     group_name              = models.CharField(max_length=25, verbose_name='Chat Group Name')
     bio                     = models.CharField(blank=True, null=True, max_length=75, verbose_name='Chat Group Bio')
     group_special_username  = models.SlugField(blank=True, null=True, validators=[ASCIIUsernameValidator], verbose_name='Chat Group Special Username Link')
     group_random_username   = models.SlugField(blank=True, null=True, unique=True, verbose_name='Chat Group Random Username Link')
     is_public               = models.BooleanField(default=True, verbose_name='Is Chat Group Public?')
     is_forward_allowed      = models.BooleanField(default=True, verbose_name='Is Forward Allowed?')
+    writing_access          = models.CharField(max_length=21, choices=WRITING_ACCESS, verbose_name='Writing Access Level')
+    media_uploading_access  = models.CharField(max_length=21, choices=MEDIA_UPLOADING_ACCESS, verbose_name='Media Uploading Access Level')
     creation_date           = models.DateTimeField(auto_now_add=True, verbose_name='Creation Date')
     # >>> If allow_forward is disabled, then ManyToMany() field in Message table will be
     # treated as ForeignKey().
@@ -32,12 +45,16 @@ class ChatGroup(models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             self.group_random_username = CallableRandomLinkGenerator()
+        if self.writing_access == None:
+            self.writing_access = 'all'
+        if self.media_uploading_access == None:
+            self.media_uploading_access = None
         self.full_clean()
         super().save(*args, **kwargs)
 
 
 
-    # Validates Group Special Username
+    # Validates Group Special Username. It's useful when we want to create groups in django admin panel.
     def clean(self):
         messages = {
             "requires_value": "%(group_special_username)s is required when you set %(is_public)s to true.",
@@ -76,7 +93,7 @@ class ChatGroupMember(models.Model):
 
     chat_group      = models.ForeignKey('ChatGroup', on_delete=models.CASCADE, verbose_name='Related Chat Group')
     user            = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='Joined User')
-    access_level    = models.CharField(choices=ACCESS_LEVEL, max_length=11, verbose_name='User Access Level')
+    access_level    = models.CharField(choices=ACCESS_LEVEL, default='normal_user', max_length=11, verbose_name='User Access Level')
     member_nickname = models.CharField(max_length=20, blank=True, null=True, verbose_name='Nickname')
     joined_at       = models.DateTimeField(auto_now_add=True, verbose_name='Joining Date')
 
@@ -85,7 +102,14 @@ class ChatGroupMember(models.Model):
         verbose_name_plural = "Chat Group Members"
 
     def __str__(self):
-        return str(self.chat_group) + ' -- ' + str(self.user)
+        return str(self.chat_group) + ' -- ' + str(self.user.pk)
+    
+
+    # def save(self, *args, **kwargs):
+    #     if self.pk == None and (self.access_level == None or (self.access_level).strip() == ''):
+    #         self.access_level = 'normal_user'
+    #     return super().save(*args, **kwargs)
+
 
 
 

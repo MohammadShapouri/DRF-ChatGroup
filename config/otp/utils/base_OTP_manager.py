@@ -4,7 +4,8 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from otp.models import OTPCode
-from random import randint
+import random
+import string
 from .base_OTP_config_manager import BaseOTPConfigManager
 
 
@@ -70,11 +71,11 @@ class BaseOTPManager(BaseOTPConfigManager):
 
 
     def create_random_digits(self, char_count):
-        # allowedChars = string.digits
-        # return int(''.join(random.choices(allowedChars, k=char_count)))
-        range_start = 10**(char_count-1)
-        range_start = (10**char_count)-1
-        return str(randint(range_start, range_start))
+        allowedChars = string.digits
+        return (''.join(random.choices(allowedChars, k=char_count)))
+        # range_start = 10**(char_count-1)
+        # range_start = (10**char_count)-1
+        # return str(randint(range_start, range_start))
 
 
 
@@ -98,6 +99,9 @@ class BaseOTPManager(BaseOTPConfigManager):
                     OTP_code_objects[i].delete()
         elif len(OTP_code_objects) == 1:
             self.OTP_code_object = OTP_code_objects[0]
+        else:
+            self.OTP_code_object = None
+
 
 
 
@@ -178,6 +182,9 @@ class BaseOTPManager(BaseOTPConfigManager):
         config = self.get_config_based_on_OTP_config_profile_name(OTP_config_name)
         self.OTP_query(user, config['OTP_type'], config['OTP_usage'])
 
+        if self.OTP_code_object == None:
+            return self.no_OTP_exists()
+
         if config['OTP_type'] == "timer_counter_based":
             return self.verify_timer_and_counter_based_OTP(user, user_input_code)
         elif config['OTP_type'] == "counter_based":
@@ -217,12 +224,12 @@ class BaseOTPManager(BaseOTPConfigManager):
 
 
     def verify_timer_based_OTP(self, user, user_input_code):
-        if self.OTP_code_object.has_time == True:
+        if self.OTP_code_object.has_time() == True:
             if self.OTP_code_object.otp == user_input_code:
                 self.OTP_code_object.delete()
                 return  self.after_OTP_verification_action(user)
             else:
-                self.OTP_code_object.increment_try_counter_value()
+                # self.OTP_code_object.increment_try_counter_value()
                 return self.wrong_OTP_input()
         else:
             return self.OTP_expired()

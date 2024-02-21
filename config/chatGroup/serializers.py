@@ -2,12 +2,10 @@ from rest_framework import serializers
 from .models import ChatGroup, ChatGroupMember, Message
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from .utils.pk_cache import ChatGroupPKCahce
 from extentions.regexValidators.random_link_generator import CallableRandomLinkGenerator
 
-
 UserAccount = get_user_model()
-
-
 
 
 
@@ -26,7 +24,7 @@ class ChatGroupCreationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatGroup
-        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'creation_date']
+        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'writing_access', 'media_uploading_access', 'creation_date']
 
 
 
@@ -39,7 +37,7 @@ class ChatGroupCreationSerializer(serializers.ModelSerializer):
             if attrs.get('group_special_username') == None:
                 raise serializers.ValidationError({'detail': "Public groups require special username."})
             elif attrs.get('group_special_username') == '' or str(attrs.get('group_special_username')).strip() == '':
-                raise serializers.ValidationError({'group_special_username': 'This field may not be blank when you make group public.'})
+                raise serializers.ValidationError({'group_special_username': 'This field may not be blank when you want to create a public group.'})
             if len(ChatGroup.objects.filter(Q(is_public=True) and Q(group_special_username=attrs.get('group_special_username')))) != 0:
                 raise serializers.ValidationError({'detail': "username is already in use."})
         return attrs
@@ -54,14 +52,17 @@ class ChatGroupCreationSerializer(serializers.ModelSerializer):
 
 
 
-class ChatGroupUpdateSerializer(serializers.ModelSerializer):
+class ChatGroupUpdateSerializer(serializers.ModelSerializer, ChatGroupPKCahce):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.request = self.context.get('request')
+        # self.chat_group = self.context.get('chat_group')
+
         self.is_user_owner = self.context.get('is_user_owner')
         self.is_user_admin = self.context.get('is_user_admin')
-        self.chat_group_member_owner_object = self.context.get('chat_group_member_owner_object')
-        self.chat_group_member_admin_pk_list = self.context.get('chat_group_member_admin_pk_list')
+        self.chat_group_owner_pk = self.context.get('chat_group_owner_pk')
+        self.chat_group_admins_pk_list = self.context.get('chat_group_admins_pk_list')
+        self.chat_group_normal_members_pk_list = self.context.get('chat_group_normal_members_pk_list')
         self.fields['creation_date'].read_only = True
         self.fields['group_random_username'].read_only = True
         self.fields['group_name'].required = False
@@ -70,15 +71,13 @@ class ChatGroupUpdateSerializer(serializers.ModelSerializer):
         self.fields['group_special_username'].allow_null = True
         self.fields['group_special_username'].allow_blank = True
         # UNAUTHENTICATED USERS ACCESS TO THIS SERIALIZER MUST BE RESTRICTED IN VIEWS.
-        if self.request.user.is_authenticated and (self.request.user.is_superuser or self.request.user.is_staff):
-            self.fields['owner'] = serializers.PrimaryKeyRelatedField(queryset=ChatGroupMember.objects.filter(Q(chat_group=self.instance)), label='Owner', required=False, allow_null=False)
-        elif self.is_user_owner:
-            self.fields['owner'] = serializers.PrimaryKeyRelatedField(queryset=ChatGroupMember.objects.filter(Q(chat_group=self.instance)), label='Owner', required=False, allow_null=False)
+        if (self.request.user.is_authenticated and (self.request.user.is_superuser or self.request.user.is_staff)) or (self.is_user_owner):
+            self.fields['owner'] = serializers.PrimaryKeyRelatedField(queryset=UserAccount.objects.filter(Q(pk=self.chat_group_owner_pk) | Q(pk__in=self.chat_group_admins_pk_list) | Q(pk__in=self.chat_group_normal_members_pk_list)), label='Owner', required=False, allow_null=False)
 
 
     class Meta:
         model = ChatGroup
-        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'creation_date']
+        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'writing_access', 'media_uploading_access', 'creation_date']
 
 
     def validate(self, attrs):
@@ -86,7 +85,7 @@ class ChatGroupUpdateSerializer(serializers.ModelSerializer):
             if attrs.get('group_special_username') == None:
                 raise serializers.ValidationError({'detail': "Public groups require special username."})
             elif attrs.get('group_special_username') == '' or str(attrs.get('group_special_username')).strip() == '':
-                raise serializers.ValidationError({'group_special_username': 'This field may not be blank when you make group public.'})
+                raise serializers.ValidationError({'group_special_username': 'This field may not be blank when you want to make a group public.'})
             if len(ChatGroup.objects.filter(Q(is_public=True) and Q(group_special_username=attrs.get('group_special_username')))) != 0:
                 raise serializers.ValidationError({'detail': "username is already in use."})
 
@@ -94,9 +93,9 @@ class ChatGroupUpdateSerializer(serializers.ModelSerializer):
         # superuser or staff or group owner use update method and change owner of group.
         owner = attrs.get('owner')
         if owner != None:
-            if owner == self.chat_group_member_owner_object:
+            if int(owner.pk) == int(self.chat_group_owner_pk):
                 attrs.pop('owner', None)
-            elif str(owner.pk) not in self.chat_group_member_admin_pk_list:
+            elif int(owner.pk) not in self.chat_group_admins_pk_list:
                 raise serializers.ValidationError({'detail': "new owner must be selected from group admins." +
                                                             " To give this user ownership of group, change its access level to admin first."})
         return attrs
@@ -111,7 +110,6 @@ class ChatGroupUpdateSerializer(serializers.ModelSerializer):
 
 
 
-
 class ChatGroupRetrivalSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -119,9 +117,9 @@ class ChatGroupRetrivalSerializer(serializers.ModelSerializer):
         self.is_user_owner = self.context.get('is_user_owner')
         self.is_user_admin = self.context.get('is_user_admin')
         if self.request.user.is_authenticated and ((self.request.user.is_superuser or self.request.user.is_staff) or self.is_user_owner or self.is_user_admin):
-            fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'creation_date']
+            fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'writing_access', 'media_uploading_access', 'creation_date']
         else:
-            fields = ['pk', 'group_name', 'bio', 'group_special_username', 'is_public', 'is_forward_allowed', 'creation_date']
+            fields = ['pk', 'group_name', 'bio', 'group_special_username', 'is_public', 'is_forward_allowed', 'writing_access', 'media_uploading_access', 'creation_date']
 
         allowed = set(fields)
         existing = set(self.fields.keys())
@@ -131,7 +129,7 @@ class ChatGroupRetrivalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatGroup
-        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'creation_date']
+        fields = ['pk', 'group_name', 'bio', 'group_special_username', 'group_random_username', 'is_public', 'is_forward_allowed', 'writing_access', 'media_uploading_access', 'creation_date']
 
 
 
@@ -178,7 +176,7 @@ class ChatGroupMemberCreationSerializer(serializers.ModelSerializer):
                     if i == len(chat_group_member_objects)-1:
                         raise serializers.ValidationError({'chat_group': "You can't add users to a chat group which you are not a member of that."})
 
-        if attrs.get('chat_group').is_public == False and self.request.user.is_superuser == False or self.request.user.is_staff == False or self.is_user_admin == False or self.is_user_owner == False:
+        if self.chat_group.is_public == False and (self.request.user.is_superuser == False or self.request.user.is_staff == False) and (self.is_user_admin == False or self.is_user_owner == False):
             if attrs.get('group_random_username') == None:
                 group_random_link_verbose_name = ChatGroup._meta.get_field('group_random_username').verbose_name.title()
                 raise serializers.ValidationError({'detail': f"{group_random_link_verbose_name} is required for joining private groups."})
@@ -199,7 +197,6 @@ class ChatGroupMemberUpdateSerializer(serializers.ModelSerializer):
         self.fields['joined_at'].read_only = True
         self.fields['chat_group'].read_only = True
         self.fields['chat_group'].required = False
-        self.chat_group_member_owner_object = self.context.get('chat_group_member_owner_object')
         if self.user.is_authenticated and (self.user.is_superuser or self.user.is_staff):
             fields = ['chat_group', 'user', 'access_level', 'member_nickname', 'joined_at']
         else:
@@ -224,6 +221,8 @@ class ChatGroupMemberUpdateSerializer(serializers.ModelSerializer):
         if attrs.get('access_level') == 'owner':
             if self.instance.access_level == 'normal_user':
                 raise serializers.ValidationError({'access_level': "Normal users can't become owner directly, change its access level to admin first."})
+            if self.instance.access_level == 'owner':
+                attrs.pop('owner', None)
         return attrs
 
 

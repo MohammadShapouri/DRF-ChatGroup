@@ -1,6 +1,14 @@
 from django.urls import path
 from . import views
 from rest_framework import routers
+from .utils.pk_cache import ChatGroupPKCahce
+
+
+
+# This method will be ran once after runserver to cache PKs.
+chat_group_pk_cahce = ChatGroupPKCahce()
+chat_group_pk_cahce.initial_caching_at_startup()
+
 
 
 router = routers.SimpleRouter()
