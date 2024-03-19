@@ -47,20 +47,22 @@ class AdminOwnerNormalMemberFinder(ChatGroupPKCahce):
 
 class MembershipStatusDefiner(ChatGroupPKCahce):
     is_member = False
-    chat_group_member_pk_list = list()
 
-
-    def define_member_status(self, user, chat_group):
-        self.chat_group_member_pk_list = list()
+    def define_membership_status(self, user, chat_group):
+        chat_group_member_pk_list = list()
         # chat_group_member_objects = ChatGroupMember.objects.filter(Q(chat_group=chat_group)).select_related('user')
         # for each_object in chat_group_member_objects:
         #     if each_object.user == user:
         #         self.is_member = True
         #         return self.is_member
         cached_chat_group_members_pk_dict = self.get_cached_set_based_on_chat_group_obj(chat_group)
-        self.chat_group_member_pk_list = list(map(int, cached_chat_group_members_pk_dict.get('normal_users_pk')))
+        chat_group_member_pk_list = list(map(int, cached_chat_group_members_pk_dict.get('normal_users_pk')))
+        chat_group_member_pk_list += list(map(int, cached_chat_group_members_pk_dict.get('admins_pk')))
+        chat_group_member_pk_list.append(int(cached_chat_group_members_pk_dict.get('owner_pk')))
 
-        if int(user.pk) in self.chat_group_member_pk_list:
+
+
+        if int(user.pk) in chat_group_member_pk_list:
             self.is_member = True
             return self.is_member
 

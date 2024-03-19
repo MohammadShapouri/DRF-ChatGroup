@@ -30,6 +30,7 @@ class ChatGroup(models.Model):
     is_forward_allowed      = models.BooleanField(default=True, verbose_name='Is Forward Allowed?')
     writing_access          = models.CharField(max_length=21, choices=WRITING_ACCESS, verbose_name='Writing Access Level')
     media_uploading_access  = models.CharField(max_length=21, choices=MEDIA_UPLOADING_ACCESS, verbose_name='Media Uploading Access Level')
+    add_users_by_members    = models.BooleanField(default=True, verbose_name='Can other users add new members?')
     creation_date           = models.DateTimeField(auto_now_add=True, verbose_name='Creation Date')
     # >>> If allow_forward is disabled, then ManyToMany() field in Message table will be
     # treated as ForeignKey().

@@ -113,7 +113,7 @@ class UserAccountUpdateSerializer(serializers.ModelSerializer):
 
 
 
-class UserAccountRetrivalSerializer(serializers.ModelSerializer):
+class UserAccountRetrievalSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = self.context.get('user')

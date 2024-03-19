@@ -9,10 +9,10 @@ from .utils.chat_group_finder import ChatGroupFinder
 from .utils.pk_cache import ChatGroupPKCahce
 from .serializers import (
                         ChatGroupCreationSerializer,
-                        ChatGroupRetrivalSerializer,
+                        ChatGroupRetrievalSerializer,
                         ChatGroupUpdateSerializer,
                         ChatGroupMemberCreationSerializer,
-                        ChatGroupMemberRetrivalSerializer,
+                        ChatGroupMemberRetrievalSerializer,
                         ChatGroupMemberUpdateSerializer,
                         )
 from .utils.custom_exceptions import (
@@ -58,7 +58,7 @@ class ChatGroupViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGroupPKCa
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return ChatGroupRetrivalSerializer
+            return ChatGroupRetrievalSerializer
         elif self.request.method == 'PUT' or self.request.method == 'PATCH':
             return ChatGroupUpdateSerializer
         elif self.request.method == 'POST':
@@ -179,13 +179,13 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
         chat_group_pk = self.kwargs.get('chat_group_pk')
         self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
 
-        if self.user.is_authenticated and self.user.is_superuser or self.user.is_staff:
+        if self.request.user.is_authenticated and self.request.user.is_superuser or self.request.user.is_staff:
             queryset = ChatGroupMember.objects.get(chat_group=self.chat_group)
             return queryset
         else:
-            self.define_member_status(self.request.user, self.chat_group)
+            self.define_membership_status(self.request.user, self.chat_group)
             if self.is_member:
-                queryset = ChatGroupMember.objects.get(chat_group=self.chat_group)
+                queryset = ChatGroupMember.objects.filter(chat_group=self.chat_group)
                 return queryset
         raise OnlyMembersAccess
 
@@ -217,7 +217,7 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return ChatGroupMemberRetrivalSerializer
+            return ChatGroupMemberRetrievalSerializer
         elif self.request.method == 'PUT' or self.request.method == 'PATCH':
             return ChatGroupMemberUpdateSerializer
         elif self.request.method == 'POST':
@@ -246,8 +246,11 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
     def create(self, request, *args, **kwargs):
         chat_group_pk = self.kwargs.get('chat_group_pk')
         self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
+        self.find_owner_and_admins(self.request.user, self.chat_group)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data.pop('group_random_username', None)
+        serializer.fields.pop('group_random_username', None)
         new_chat_group_member_obj = serializer.save(chat_group=self.chat_group)
         self.add_new_member_to_cached_data(self.chat_group, new_chat_group_member_obj)
         headers = self.get_success_headers(serializer.data)
@@ -263,6 +266,7 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
         and self.is_user_owner == False and self.is_user_admin == False:
             raise NormalMembersAccessRestriction
 
+            
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
@@ -317,7 +321,7 @@ class MessageViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGroupFinder
             queryset = Message.objects.get(chat_group=self.chat_group)
             return queryset
         else:
-            self.define_member_status(self.request.user, self.chat_group)
+            self.define_membership_status(self.request.user, self.chat_group)
             if self.is_member:
                 queryset = Message.objects.get(chat_group=self.chat_group)
                 return queryset

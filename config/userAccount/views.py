@@ -3,7 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny
 from .models import UserAccount, UserAccountProfilePicture
 from .permissions import IsOwnerOrAdmin, IsPictureOwnerOrAdmin
-from .serializers import UserAccountCreationSerializer, UserAccountUpdateSerializer, UserAccountRetrivalSerializer, ChangePasswordSerializer, ResetPasswordSerializer, UserAccountDeletionSerializer
+from .serializers import UserAccountCreationSerializer, UserAccountUpdateSerializer, UserAccountRetrievalSerializer, ChangePasswordSerializer, ResetPasswordSerializer, UserAccountDeletionSerializer
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import status
@@ -22,7 +22,7 @@ from .user_account_OTP_manager import (
 from .serializers import (
                         UserAccountCreationSerializer,
                         UserAccountUpdateSerializer,
-                        UserAccountRetrivalSerializer,
+                        UserAccountRetrievalSerializer,
                         UserAccountDeletionSerializer,
                         ChangePasswordSerializer,
                         ResetPasswordSerializer,
@@ -99,7 +99,7 @@ class UserAccountViewSet(ModelViewSet, UserAccountOTPManager):
         elif self.request.method == 'DELETE':
             return UserAccountDeletionSerializer
         else:
-            return UserAccountRetrivalSerializer
+            return UserAccountRetrievalSerializer
         # return super().get_serializer_class()
 
 

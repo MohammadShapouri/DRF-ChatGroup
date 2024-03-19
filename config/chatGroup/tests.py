@@ -192,6 +192,7 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
             "group_random_username": "ran",
             "is_public": "True",
             "is_forward_allowed": "True",
+            "add_users_by_members": "False",
             "writing_access": "only_owner_and_admins",
             "media_uploading_access": "only_owner_and_admins",
         }
@@ -212,6 +213,7 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(chat_group_member_obj.chat_group.group_special_username, "test_special_username")
         self.assertNotEqual(chat_group_member_obj.chat_group.group_random_username, None)
         self.assertEqual(chat_group_member_obj.chat_group.is_public, True)
+        self.assertEqual(chat_group_member_obj.chat_group.add_users_by_members, False)
         self.assertNotEqual(chat_group_member_obj.chat_group.group_random_username, "ran")
         self.assertNotEqual(chat_group_member_obj.chat_group.group_random_username, None)
         self.assertEqual(chat_group_member_obj.chat_group.is_forward_allowed, True)
@@ -1191,4 +1193,446 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
         # Validating results. -- cached data was deleted. it was checked in views.
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['detail'], "Normal members and admins of chat group can't access this method.")
+
+
+
+
+
+
+
+
+
+
+class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
+    maxDiff = None
+
+    def setUp(self):
+        # Creating 5 users.
+        UserModel = get_user_model()
+        self.superuser = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234000',
+            email = 'testuser0@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            is_superuser = True,
+            is_staff = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+        self.user_1 = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234111',
+            email = 'testuser1@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+        self.user_2 = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234222',
+            email = 'testuser2@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+        self.user_3 = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234333',
+            email = 'testuser3@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+        self.user_4 = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234444',
+            email = 'testuser4@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+        self.user_5 = UserModel.objects.create(
+            first_name = 'test first_name',
+            last_name = 'test last_name',
+            phone_number = '09361234555',
+            email = 'testuser5@mail.com',
+            is_account_verified = True,
+            is_active = True,
+            new_phone_number = None,
+            is_new_phone_verified = True,
+            password = make_password('test_user_12345')
+        )
+
+
+
+        # Creating 2 chat groups.
+        self.chat_group_1 = ChatGroup.objects.create(
+            group_name = "group 1",
+            group_random_username = "qwertyuiopasdfghjk1",
+            is_public = False,
+            is_forward_allowed = True,
+            writing_access = "all",
+            media_uploading_access = "all"
+        )
+
+        self.chat_group_2 = ChatGroup.objects.create(
+            group_name = "group 2",
+            group_special_username = "special_username_2",
+            group_random_username = "qwertyuiopasdfghjk2",
+            add_users_by_members = False,
+            is_public = True,
+            is_forward_allowed = True,
+            writing_access = "all",
+            media_uploading_access = "all"
+        )
+
+        self.chat_group_member__1_to_1 = ChatGroupMember.objects.create(
+            chat_group = self.chat_group_1,
+            user = self.user_1,
+            access_level = 'owner'
+        )
+
+        self.chat_group_member__2_to_2 = ChatGroupMember.objects.create(
+            chat_group = self.chat_group_2,
+            user = self.user_2,
+            access_level = 'owner'
+        )
+
+
+
+    def tearDown(self):
+        # Deleting 5 users.
+        UserModel = get_user_model()
+        UserModel.objects.raw('DELETE FROM userAccount_useraccount')
+        ChatGroup.objects.raw('DELETE FROM chatGroup_chatgroup')
+        ChatGroupMember.objects.raw('DELETE FROM chatGroup_chatgroupmember')
+
+
+
+    def test_chat_group_member_creation_1(self):
+        # Testing joining private chat group by user itself.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_creation_2(self):
+        # Testing adding member to private chat group by its admin.
+
+        # Adding admin.
+        chat_group_member__2_to_1 = ChatGroupMember.objects.create(
+            chat_group = self.chat_group_1,
+            user = self.user_2,
+            access_level = 'admin'
+        )
+
+        # Authenticating user 2.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234222",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_creation_3(self):
+        # Testing adding member to private chat group by its owner.
+
+        # Authenticating user 1 -- Group's owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_creation_4(self):
+        # Testing adding member to private chat group without special username by superuser.
+
+        # Authenticating superuser.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234000",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "owner")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_creation_5(self):
+        # Testing joining private chat group again.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+        # Joining the chat group again
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['user'][0], "User is already a member of this chat group.")
+
+
+
+
+
+    def test_chat_group_member_creation_6(self):
+        # Testing adding public chat group by a user who is not a member of group.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_2.pk})
+        data = {
+            "chat_group": self.chat_group_2.pk,
+            "user": self.user_4.pk,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['chat_group'][0], "You can't add users to a chat group which you are not a member of that.")
+
+
+
+
+
+    def test_chat_group_member_creation_7(self):
+        # Testing joining private chat group without special username by a normal user.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_4.pk,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        group_random_link_verbose_name = ChatGroup._meta.get_field('group_random_username').verbose_name.title()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['chat_group'][0], f"{group_random_link_verbose_name} is required for joining private groups.")
+
+
+
+
+
+    def test_chat_group_member_creation_8(self):
+        # Testing joining private chat group without special username by owner.
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Creating chat group.
+        url = reverse('ChatGroup-list')
+        data = {
+            "group_name": "test group_name",
+            "group_special_username": "test_special_username",
+            "is_public": "False",
+            "is_forward_allowed": "True",
+            "add_users_by_members": "False",
+            "writing_access": "only_owner_and_admins",
+            "media_uploading_access": "only_owner_and_admins",
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_pk = response.data['pk']
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # adding member to the chat group by owner
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': chat_group_pk})
+        data = {
+            "chat_group": chat_group_pk,
+            "user": self.user_4.pk,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], chat_group_pk)
+        self.assertEqual(response.data['user'], self.user_4.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertNotEqual(response.data['joined_at'], None)
 
