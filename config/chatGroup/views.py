@@ -180,7 +180,7 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
         self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
 
         if self.request.user.is_authenticated and self.request.user.is_superuser or self.request.user.is_staff:
-            queryset = ChatGroupMember.objects.get(chat_group=self.chat_group)
+            queryset = ChatGroupMember.objects.filter(chat_group=self.chat_group)
             return queryset
         else:
             self.define_membership_status(self.request.user, self.chat_group)
@@ -270,16 +270,31 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
-        access_level = serializer.validated_data.get('access_level')
-        # updated_member_obj will become new owner if he/she is not owner or normal user and access_level is owner.
-        updated_chat_group_member_obj = serializer.save()
+
+        access_level = serializer.validated_data.pop('access_level', None)
+
         # If ownership is changed, this part will be executed.
         # access_level can be changed by owners.
-        if access_level == 'owner':
-            chat_group_member_owner_object = ChatGroupMember.objects.get(pk=self.chat_group_owner_pk)
-            chat_group_member_owner_object.access_level = "admin"
-            new_chat_group_member_admin_obj = chat_group_member_owner_object.save()
-            self.change_chat_group_ownership_cached_data(instance.chat_group, updated_chat_group_member_obj, new_chat_group_member_admin_obj)
+        if access_level == 'owner' and instance.access_level == 'admin':
+            # updated_member_obj will become new owner if he/she is not owner or normal user and access_level is owner.
+            updated_chat_group_member_obj = serializer.save(access_level='owner')
+            chat_group_member_owner_object = ChatGroupMember.objects.get(Q(user__pk=self.chat_group_owner_pk) & Q(chat_group=instance.chat_group))
+            chat_group_member_owner_object.access_level = 'admin'
+            # chat_group_member_owner_object was owner previously and currently it's admin.
+            chat_group_member_owner_object.save()
+            self.change_chat_group_ownership_cached_data(instance.chat_group, updated_chat_group_member_obj, chat_group_member_owner_object)
+
+        if access_level == 'admin' and instance.access_level == 'normal_user':
+            # updated_member_obj will become new admin if he/she is not admin and access_level is owner.
+            updated_chat_group_member_obj = serializer.save(access_level='admin')
+            self.change_chat_group_normal_member_to_admin_cached_data(instance.chat_group, updated_chat_group_member_obj)
+
+        if access_level == 'normal_user' and instance.access_level == 'admin':
+            # updated_member_obj will become new normal user if he/she is not admin and access_level is owner.
+            updated_chat_group_member_obj = serializer.save(access_level='normal_user')
+            self.change_chat_group_admin_to_normal_member_cached_data(instance.chat_group, updated_chat_group_member_obj)
+
+        updated_chat_group_member_obj = serializer.save()
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
         return Response(serializer.data)
@@ -303,7 +318,6 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
         self.perform_destroy(instance)
         self.remove_member_form_chat_group_set(instance.chat_group, instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 
 

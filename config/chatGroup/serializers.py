@@ -208,10 +208,11 @@ class ChatGroupMemberUpdateSerializer(serializers.ModelSerializer):
             fields = ['pk', 'chat_group', 'user', 'access_level', 'member_nickname', 'joined_at']
         else:
             self.fields['user'].read_only = True
+            self.fields['joined_at'].read_only = True
             if self.is_user_owner:
-                fields = ['pk', 'chat_group', 'user', 'access_level', 'member_nickname']
+                fields = ['pk', 'chat_group', 'user', 'access_level', 'member_nickname', 'joined_at']
             elif self.is_user_admin:
-                fields = ['pk', 'chat_group', 'user', 'member_nickname']
+                fields = ['pk', 'chat_group', 'user', 'member_nickname', 'joined_at']
 
         allowed = set(fields)
         existing = set(self.fields.keys())

@@ -99,6 +99,7 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
 
 
     def test_initial_caching_at_startup(self):
+        self.flush_redis_db()
         UserModel = get_user_model()
 
         chat_group_1 = ChatGroup.objects.create(
@@ -1032,6 +1033,89 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
 
 
 
+    def test_chat_group_destroy_3(self):
+        # Testing deleting chat group by its admin.
+        UserModel = get_user_model()
+
+        # Authenticating normal user 1.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+
+
+        # Creating chat group.
+        url = reverse('ChatGroup-list')
+        data = {
+            "group_name": "test group_name",
+            "group_special_username": "",
+            "group_random_username": "ran",
+            "is_public": "False",
+            "is_forward_allowed": "False",
+            "writing_access": "all",
+            "media_uploading_access": "all",
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        chat_group_pk = response.data['pk']
+
+
+        # Authenticating superuser.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234000",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Adding an admin.
+        user_3 = UserModel.objects.get(phone_number='09361234333')
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': chat_group_pk})
+        data = {
+            "user": user_3.pk,
+            "access_level": "normal_user",
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # Authenticating admin.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234333",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Deleting chat group.
+        url = reverse('ChatGroup-detail', kwargs={'pk': chat_group_pk})
+        response = self.client.delete(url, headers=headers, format='json')
+
+
+        # Validating results. -- cached data was deleted. it was checked in views.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], "Normal members and admins of chat group can't access this method.")
+
+
+
+
+
     def test_chat_group_destroy_4(self):
         # Testing deleting chat group by one of its users.
         UserModel = get_user_model()
@@ -1112,87 +1196,6 @@ class ChatGroupTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.data['detail'], "Normal members and admins of chat group can't access this method.")
 
 
-
-
-
-    def test_chat_group_destroy_3(self):
-        # Testing deleting chat group by its admin.
-        UserModel = get_user_model()
-
-        # Authenticating normal user 1.
-        url = reverse('token_obtain_pair')
-        data = {
-            "phone_number": "09361234111",
-            "password": "test_user_12345"
-        }
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        headers = {
-            "Authorization": "Bearer " + response.data['access']
-        }
-
-
-        # Creating chat group.
-        url = reverse('ChatGroup-list')
-        data = {
-            "group_name": "test group_name",
-            "group_special_username": "",
-            "group_random_username": "ran",
-            "is_public": "False",
-            "is_forward_allowed": "False",
-            "writing_access": "all",
-            "media_uploading_access": "all",
-        }
-        response = self.client.post(url, data=data, headers=headers, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        chat_group_pk = response.data['pk']
-
-
-        # Authenticating superuser.
-        url = reverse('token_obtain_pair')
-        data = {
-            "phone_number": "09361234000",
-            "password": "test_user_12345"
-        }
-        response = self.client.post(url, data, format='json')
-        headers = {
-            "Authorization": "Bearer " + response.data['access']
-        }
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-        # Adding an admin.
-        user_3 = UserModel.objects.get(phone_number='09361234333')
-        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': chat_group_pk})
-        data = {
-            "user": user_3.pk,
-            "access_level": "normal_user",
-        }
-        response = self.client.post(url, data=data, headers=headers, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-        # Authenticating admin.
-        url = reverse('token_obtain_pair')
-        data = {
-            "phone_number": "09361234333",
-            "password": "test_user_12345"
-        }
-        response = self.client.post(url, data, format='json')
-        headers = {
-            "Authorization": "Bearer " + response.data['access']
-        }
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-        # Deleting chat group.
-        url = reverse('ChatGroup-detail', kwargs={'pk': chat_group_pk})
-        response = self.client.delete(url, headers=headers, format='json')
-
-
-        # Validating results. -- cached data was deleted. it was checked in views.
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['detail'], "Normal members and admins of chat group can't access this method.")
 
 
 
@@ -1289,7 +1292,6 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
             writing_access = "all",
             media_uploading_access = "all"
         )
-
         self.chat_group_2 = ChatGroup.objects.create(
             group_name = "group 2",
             group_special_username = "special_username_2",
@@ -1300,19 +1302,20 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
             writing_access = "all",
             media_uploading_access = "all"
         )
-
+        # Creating 2 chat group members.
         self.chat_group_member__1_to_1 = ChatGroupMember.objects.create(
             chat_group = self.chat_group_1,
             user = self.user_1,
             access_level = 'owner'
         )
-
         self.chat_group_member__2_to_2 = ChatGroupMember.objects.create(
             chat_group = self.chat_group_2,
             user = self.user_2,
             access_level = 'owner'
         )
-
+        # Caching
+        chat_group_pk_cahce = ChatGroupPKCahce()
+        chat_group_pk_cahce.initial_caching_at_startup()
 
 
     def tearDown(self):
@@ -1321,6 +1324,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         UserModel.objects.raw('DELETE FROM userAccount_useraccount')
         ChatGroup.objects.raw('DELETE FROM chatGroup_chatgroup')
         ChatGroupMember.objects.raw('DELETE FROM chatGroup_chatgroupmember')
+        self.flush_redis_db()
 
 
 
@@ -1350,10 +1354,12 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         }
         response = self.client.post(url, data=data, headers=headers, format='json')
 
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
         self.assertEqual(response.data['user'], self.user_5.pk)
         self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [response.data['user']])
         self.assertNotEqual(response.data['joined_at'], None)
 
 
@@ -1388,8 +1394,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         data = {
             "chat_group": self.chat_group_1.pk,
             "user": self.user_5.pk,
-            "group_random_username": self.chat_group_1.group_random_username,
-            "access_level": "owner"
+            "group_random_username": self.chat_group_1.group_random_username
         }
         response = self.client.post(url, data=data, headers=headers, format='json')
 
@@ -1397,6 +1402,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
         self.assertEqual(response.data['user'], self.user_5.pk)
         self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [response.data['user']])
         self.assertNotEqual(response.data['joined_at'], None)
 
 
@@ -1433,6 +1439,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
         self.assertEqual(response.data['user'], self.user_5.pk)
         self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [response.data['user']])
         self.assertNotEqual(response.data['joined_at'], None)
 
 
@@ -1455,7 +1462,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-        # Joining the chat group
+        # adding member to the chat group
         url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
         data = {
             "chat_group": self.chat_group_1.pk,
@@ -1468,6 +1475,7 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
         self.assertEqual(response.data['user'], self.user_5.pk)
         self.assertEqual(response.data['access_level'], "owner")
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), int(response.data['user']))
         self.assertNotEqual(response.data['joined_at'], None)
 
 
@@ -1634,5 +1642,477 @@ class ChatGroupMemberTest(APITestCase, ChatGroupPKCahce):
         self.assertEqual(response.data['chat_group'], chat_group_pk)
         self.assertEqual(response.data['user'], self.user_4.pk)
         self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(ChatGroup.objects.get(pk=chat_group_pk)).get('normal_users_pk'), [response.data['user']])
         self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_creation_9(self):
+        # Testing joining private chat group without special username by admin.
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Creating chat group.
+        url = reverse('ChatGroup-list')
+        data = {
+            "group_name": "test group_name",
+            "group_special_username": "test_special_username",
+            "is_public": "False",
+            "is_forward_allowed": "True",
+            "add_users_by_members": "False",
+            "writing_access": "only_owner_and_admins",
+            "media_uploading_access": "only_owner_and_admins",
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_pk = response.data['pk']
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # adding member to the chat group by owner
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': chat_group_pk})
+        data = {
+            "chat_group": chat_group_pk,
+            "user": self.user_4.pk,
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+        # changing member access level from normal user to admin.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': chat_group_pk, 'pk': response.data['pk']})
+        data = {
+            "access_level": "admin"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # authenticating new admin
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234444",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # adding member to the chat group by admin
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': chat_group_pk})
+        data = {
+            "chat_group": chat_group_pk,
+            "user": self.user_3.pk
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['chat_group'], chat_group_pk)
+        self.assertEqual(response.data['user'], self.user_3.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(ChatGroup.objects.get(pk=chat_group_pk)).get('admins_pk'), [self.user_4.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(ChatGroup.objects.get(pk=chat_group_pk)).get('normal_users_pk'), [self.user_3.pk])
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+    def test_chat_group_member_update_1(self):
+        # Testing updating user by owner.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_member_pk = response.data['pk']
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # changing member nickname.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "member_nickname": "my lovely user"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+        
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_5.pk])
+        self.assertEqual(response.data['member_nickname'], "my lovely user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_update_2(self):
+        # Testing updating user by owner.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_member_pk = response.data['pk']
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_5.pk])
+
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # changing member nickname and access level to admin.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "admin",
+            "member_nickname": "my lovely user"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "admin")
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_5.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+        self.assertEqual(response.data['member_nickname'], "my lovely user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_update_3(self):
+        # Testing updating user by owner.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_member_pk = response.data['pk']
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_5.pk])
+
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # changing member nickname and access level to admin.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "admin",
+            "member_nickname": "my lovely user"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_5.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+
+
+
+        # changing member access level to owner.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "owner",
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "owner")
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_5.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_1.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+        self.assertEqual(response.data['member_nickname'], "my lovely user")
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_update_4(self):
+        # Testing updating user by owner.
+
+        # Authenticating user 5.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # Joining the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "group_random_username": self.chat_group_1.group_random_username,
+            "access_level": "owner"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_member_pk = response.data['pk']
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_5.pk])
+
+
+        # Authenticating owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234111",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # changing member nickname and access level to admin.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "admin",
+            "member_nickname": "my lovely user"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_5.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+
+
+
+        # changing member access level to owner.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "owner",
+            "member_nickname": ""
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_5.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_1.pk])
+        self.assertEqual(response.data['member_nickname'], "")
+
+        # Authenticating user 5 -- new owner.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234555",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        # changing member access level of previous owner to normal user.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': ChatGroupMember.objects.get(Q(user__phone_number="09361234111") & Q(chat_group=self.chat_group_1)).pk})
+        data = {
+            "access_level": "normal_user",
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_1.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_5.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_1.pk])
+        self.assertEqual(response.data['member_nickname'], None)
+        self.assertNotEqual(response.data['joined_at'], None)
+
+
+
+
+
+    def test_chat_group_member_update_5(self):
+        # Testing updating user by superuser.
+
+        # Authenticating superuser.
+        url = reverse('token_obtain_pair')
+        data = {
+            "phone_number": "09361234000",
+            "password": "test_user_12345"
+        }
+        response = self.client.post(url, data, format='json')
+        headers = {
+            "Authorization": "Bearer " + response.data['access']
+        }
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+
+        # adding member to the chat group
+        url = reverse('ChatGroupMember-list', kwargs={'chat_group_pk': self.chat_group_1.pk})
+        data = {
+            "chat_group": self.chat_group_1.pk,
+            "user": self.user_5.pk,
+            "access_level": "normal_user"
+        }
+        response = self.client.post(url, data=data, headers=headers, format='json')
+        chat_group_member_pk = response.data['pk']
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "normal_user")
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_1.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [self.user_5.pk])
+
+
+        # changing member access level to admin.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "admin",
+            "member_nickname": ""
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+
+        chat_group_member_admin_obj = ChatGroupMember.objects.get(Q(chat_group=self.chat_group_1) & Q(access_level='admin'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "admin")
+        self.assertEqual(self.user_5, chat_group_member_admin_obj.user)
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_1.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_5.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+        self.assertEqual(response.data['member_nickname'], "")
+
+
+        # changing member nickname and access level to owner.
+        url = reverse('ChatGroupMember-detail', kwargs={'chat_group_pk': self.chat_group_1.pk, 'pk': chat_group_member_pk})
+        data = {
+            "access_level": "owner",
+            "member_nickname": "my lovely user"
+        }
+        response = self.client.put(url, data=data, headers=headers, format='json')
+
+        chat_group_member_admin_obj = ChatGroupMember.objects.get(Q(chat_group=self.chat_group_1) & Q(access_level='admin'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['chat_group'], self.chat_group_1.pk)
+        self.assertEqual(response.data['user'], self.user_5.pk)
+        self.assertEqual(response.data['access_level'], "owner")
+        self.assertEqual(self.user_1, chat_group_member_admin_obj.user)
+        self.assertEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('owner_pk'), self.user_5.pk)
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('admins_pk'), [self.user_1.pk])
+        self.assertListEqual(self.get_cached_set_based_on_chat_group_obj(self.chat_group_1).get('normal_users_pk'), [])
+
+
+
+
+
+
+
 

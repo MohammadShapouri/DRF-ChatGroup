@@ -40,6 +40,8 @@ class BasePKCache:
         self.redis_db.delete(self.clean_set_name(set_name))
 
 
+    def flush_redis_db(self):
+        self.redis_db.flushdb()
 
 
 
@@ -75,8 +77,10 @@ class ChatGroupPKCahce(BasePKCache):
         self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_members_data)
 
     
+
     def get_cached_set_based_on_chat_group_obj(self, chat_group_obj):
         return self.get_cached_set(chat_group_obj.pk)
+
 
 
     def set_cached_set_based_on_chat_group_obj(self, chat_group_obj, set_dict):
@@ -88,27 +92,39 @@ class ChatGroupPKCahce(BasePKCache):
         self.remove_cached_set(chat_group_obj.pk)
 
 
+
     # It will be called when owner is changed.
     def change_chat_group_ownership_cached_data(self, chat_group_obj, new_chat_group_member_owner_obj, new_chat_group_member_admin_obj):
         chat_group_members_pk_dict = self.get_cached_set_based_on_chat_group_obj(chat_group_obj)
 
-        # New owner was previously admin.
+        # New owner was admin previously.
         new_chat_group_member_owner_user_obj = new_chat_group_member_owner_obj.user
         chat_group_members_pk_dict.get('admins_pk').remove(new_chat_group_member_owner_user_obj.pk)
         chat_group_members_pk_dict['owner_pk'] = new_chat_group_member_owner_user_obj.pk
-        # New admin was previously owner.
+        # New admin was owner previously.
         chat_group_members_pk_dict.get('admins_pk').append(new_chat_group_member_admin_obj.user.pk)
         self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_group_members_pk_dict)
+
+
+
+    def change_chat_group_normal_member_to_admin_cached_data(self, chat_group_obj, new_chat_group_member_admin_obj):
+        chat_group_members_pk_dict = self.get_cached_set_based_on_chat_group_obj(chat_group_obj)
+
+        # New admin was normal user previously.
+        chat_group_members_pk_dict.get('normal_users_pk').remove(new_chat_group_member_admin_obj.user.pk)
+        chat_group_members_pk_dict.get('admins_pk').append(new_chat_group_member_admin_obj.user.pk)
+        self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_group_members_pk_dict)
+
 
 
     def change_chat_group_admin_to_normal_member_cached_data(self, chat_group_obj, new_chat_group_member_normal_user_obj):
         chat_group_members_pk_dict = self.get_cached_set_based_on_chat_group_obj(chat_group_obj)
 
-        # New normal user was previously admin.
+        # New normal user was admin previously.
         chat_group_members_pk_dict.get('admins_pk').remove(new_chat_group_member_normal_user_obj.user.pk)
-        # New normal user was previously admin.
         chat_group_members_pk_dict.get('normal_users_pk').append(new_chat_group_member_normal_user_obj.user.pk)
         self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_group_members_pk_dict)
+
 
 
     def change_chat_group_normal_user_to_admin_cached_data(self, chat_group_obj, new_chat_group_member_admin_obj):
@@ -121,6 +137,7 @@ class ChatGroupPKCahce(BasePKCache):
         self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_group_members_pk_dict)
 
 
+
     def add_new_member_to_cached_data(self, chat_group_obj, new_chat_group_member_member_obj):
         chat_group_members_pk_dict = self.get_cached_set_based_on_chat_group_obj(chat_group_obj)
         if new_chat_group_member_member_obj.access_level == 'normal_user':
@@ -130,6 +147,7 @@ class ChatGroupPKCahce(BasePKCache):
         elif new_chat_group_member_member_obj.access_level == 'owner':
             chat_group_members_pk_dict['owner_pk'] = new_chat_group_member_member_obj.user.pk
         self.set_cached_set_based_on_chat_group_obj(chat_group_obj, chat_group_members_pk_dict)
+
 
 
     def remove_member_form_chat_group_set(self,chat_group_obj, chat_group_member_member_obj):

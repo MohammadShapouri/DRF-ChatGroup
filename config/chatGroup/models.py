@@ -115,7 +115,6 @@ class ChatGroupMember(models.Model):
 
 
 
-
 class Message(models.Model):
     writer      = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, verbose_name='Writer')
     chat_group  = models.ManyToManyField('ChatGroup', verbose_name='Related Chat Group')
