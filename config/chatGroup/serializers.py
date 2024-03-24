@@ -274,88 +274,88 @@ class MessageRetrievalSerializer(serializers.ModelSerializer):
 
 
 
-class ViewSetMessageCreationSerializer(serializers.ModelSerializer):
-    # UNAUTHENTICATED USERS ACCESS TO THIS SERIALIZER MUST BE RESTRICTED IN VIEWS.
-    def __init__(self, *args, **kwargs):
-        self.user = self.context.get('user')
-        self.chat_group = self.context.get('chat_group')
-        self.fields['message'].required = False
-        self.fields['creation_date'].read_only = True
-        self.fields['updated_at'].read_only = True
-        self.fields['chat_group'].read_only = True
-        self.fields['file1'] = serializers.FileField(required=False, label='File 1')
-        self.fields['file2'] = serializers.FileField(required=False, label='File 2')
-        self.fields['file3'] = serializers.FileField(required=False, label='File 3')
-        self.fields['file4'] = serializers.FileField(required=False, label='File 4')
-        self.fields['file5'] = serializers.FileField(required=False, label='File 5')
+# class ViewSetMessageCreationSerializer(serializers.ModelSerializer):
+#     # UNAUTHENTICATED USERS ACCESS TO THIS SERIALIZER MUST BE RESTRICTED IN VIEWS.
+#     def __init__(self, *args, **kwargs):
+#         self.user = self.context.get('user')
+#         self.chat_group = self.context.get('chat_group')
+#         self.fields['message'].required = False
+#         self.fields['creation_date'].read_only = True
+#         self.fields['updated_at'].read_only = True
+#         self.fields['chat_group'].read_only = True
+#         self.fields['file1'] = serializers.FileField(required=False, label='File 1')
+#         self.fields['file2'] = serializers.FileField(required=False, label='File 2')
+#         self.fields['file3'] = serializers.FileField(required=False, label='File 3')
+#         self.fields['file4'] = serializers.FileField(required=False, label='File 4')
+#         self.fields['file5'] = serializers.FileField(required=False, label='File 5')
 
 
-    class Meta:
-        model = Message
-        fields = ['pk', 'writer', 'chat_group', 'message', 'replied_to', 'created_at', 'updated_at']
+#     class Meta:
+#         model = Message
+#         fields = ['pk', 'writer', 'chat_group', 'message', 'replied_to', 'created_at', 'updated_at']
 
 
-    def validate(self, attrs):
-        if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
-            member_chat_group_objects = ChatGroupMember.objects.filter(user=self.user).select_related('chat_group')
-            for i in range(len(member_chat_group_objects)):
-                    if self.chat_group == member_chat_group_objects[i].chat_group:
-                        break
-                    else:
-                        if i == len(member_chat_group_objects)-1:
-                            raise serializers.ValidationError({'chat_group': "You can't send message to a chat group which you are not a member of that."})
-        if attrs.get("file1", None) == None and\
-        attrs.get("file2", None) == None and\
-        attrs.get("file3", None) == None and\
-        attrs.get("file4", None) == None and\
-        attrs.get("file5", None) == None:
-            if attrs.get('message', None) == None:
-                raise serializers.ValidationError({'message': "A text message is required when you don't want to send any file."})
-        return attrs
+#     def validate(self, attrs):
+#         if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
+#             member_chat_group_objects = ChatGroupMember.objects.filter(user=self.user).select_related('chat_group')
+#             for i in range(len(member_chat_group_objects)):
+#                     if self.chat_group == member_chat_group_objects[i].chat_group:
+#                         break
+#                     else:
+#                         if i == len(member_chat_group_objects)-1:
+#                             raise serializers.ValidationError({'chat_group': "You can't send message to a chat group which you are not a member of that."})
+#         if attrs.get("file1", None) == None and\
+#         attrs.get("file2", None) == None and\
+#         attrs.get("file3", None) == None and\
+#         attrs.get("file4", None) == None and\
+#         attrs.get("file5", None) == None:
+#             if attrs.get('message', None) == None:
+#                 raise serializers.ValidationError({'message': "A text message is required when you don't want to send any file."})
+#         return attrs
 
 
-    def save(self, validated_data):
-        validated_data['writer'] = self.user
-        return super().save(validated_data)
+#     def save(self, validated_data):
+#         validated_data['writer'] = self.user
+#         return super().save(validated_data)
 
 
 
 
 
-class ViewSetMessageUpdateSerializer(serializers.ModelSerializer):
-    # UNAUTHENTICATED USERS ACCESS TO THIS SERIALIZER MUST BE RESTRICTED IN VIEWS.
-    def __init__(self, *args, **kwargs):
-        self.user = self.context.get('user')
-        self.fields['message'].required = False
-        self.fields['creation_date'].read_only = True
-        self.fields['updated_at'].read_only = True
-        if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
-            self.fields['writer'].read_only = True
-            self.fields['replied_to'].read_only = True
+# class ViewSetMessageUpdateSerializer(serializers.ModelSerializer):
+#     # UNAUTHENTICATED USERS ACCESS TO THIS SERIALIZER MUST BE RESTRICTED IN VIEWS.
+#     def __init__(self, *args, **kwargs):
+#         self.user = self.context.get('user')
+#         self.fields['message'].required = False
+#         self.fields['creation_date'].read_only = True
+#         self.fields['updated_at'].read_only = True
+#         if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
+#             self.fields['writer'].read_only = True
+#             self.fields['replied_to'].read_only = True
 
 
-    class Meta:
-        model = Message
-        fields = ['pk', 'writer', 'chat_group', 'message', 'replied_to', 'created_at', 'updated_at']
+#     class Meta:
+#         model = Message
+#         fields = ['pk', 'writer', 'chat_group', 'message', 'replied_to', 'created_at', 'updated_at']
 
 
-    def validate(self, attrs):
-        if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
-            member_chat_group_objects = ChatGroupMember.objects.filter(user=self.user).select_related('chat_group')
-            for i in range(len(member_chat_group_objects)):
-                    if attrs.get('chat_group') == member_chat_group_objects[i].chat_group:
-                        break
-                    else:
-                        if i == len(member_chat_group_objects)-1:
-                            raise serializers.ValidationError({'chat_group': "You can't send message to a chat group which you are not a member of that."})
-        if attrs.get("file1", None) == None and\
-        attrs.get("file2", None) == None and\
-        attrs.get("file3", None) == None and\
-        attrs.get("file4", None) == None and\
-        attrs.get("file5", None) == None:
-            if attrs.get('message', None) == None:
-                raise serializers.ValidationError({'message': "A text message is required when you don't want to send any file."})
-        return attrs
+#     def validate(self, attrs):
+#         if self.request.user.is_authenticated and (self.request.user.is_superuser == False or self.request.user.is_staff == False):
+#             member_chat_group_objects = ChatGroupMember.objects.filter(user=self.user).select_related('chat_group')
+#             for i in range(len(member_chat_group_objects)):
+#                     if attrs.get('chat_group') == member_chat_group_objects[i].chat_group:
+#                         break
+#                     else:
+#                         if i == len(member_chat_group_objects)-1:
+#                             raise serializers.ValidationError({'chat_group': "You can't send message to a chat group which you are not a member of that."})
+#         if attrs.get("file1", None) == None and\
+#         attrs.get("file2", None) == None and\
+#         attrs.get("file3", None) == None and\
+#         attrs.get("file4", None) == None and\
+#         attrs.get("file5", None) == None:
+#             if attrs.get('message', None) == None:
+#                 raise serializers.ValidationError({'message': "A text message is required when you don't want to send any file."})
+#         return attrs
 
 
 

@@ -303,17 +303,19 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.access_level == 'owner' or instance.access_level == 'admin':
-            if self.user.is_authenticated == False and\
-            (self.user.is_superuser == False and self.user.is_staff == False)\
-            and self.is_user_owner == False:
-                raise AdminsAndNormalMembersAccessRestriction
+        instance_user = instance.user
 
-        if instance.user != request.user:
-            if self.user.is_authenticated == False and\
-            (self.user.is_superuser == False and self.user.is_staff == False)\
-            and self.is_user_admin == False and self.is_user_owner == False:
-                raise NormalMembersDeletingAccessRestriction
+        if instance.access_level == 'owner' or instance.access_level == 'admin':
+            if self.request.user.is_authenticated == False or\
+            (self.request.user.is_superuser == False and self.request.user.is_staff == False)\
+            and self.is_user_owner == False and instance_user != request.user:
+                raise AdminsAndNormalMembersAccessRestriction
+        else:
+            if instance_user != request.user:
+                if self.request.user.is_authenticated == False or\
+                (self.request.user.is_superuser == False and self.request.user.is_staff == False)\
+                and self.is_user_admin == False and self.is_user_owner == False:
+                    raise NormalMembersDeletingAccessRestriction
 
         self.perform_destroy(instance)
         self.remove_member_form_chat_group_set(instance.chat_group, instance)
@@ -323,76 +325,76 @@ class ChatGroupMemberViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGro
 
 
 
-class MessageViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGroupFinder, MembershipStatusDefiner):
-    permission_classes = [IsAuthenticated]
+# class MessageViewSet(ModelViewSet, AdminOwnerNormalMemberFinder, ChatGroupFinder, MembershipStatusDefiner):
+#     permission_classes = [IsAuthenticated]
 
 
-    def get_queryset(self):
-        chat_group_pk = self.kwargs.get('chat_group_pk')
-        self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
+#     def get_queryset(self):
+#         chat_group_pk = self.kwargs.get('chat_group_pk')
+#         self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
 
-        if self.user.is_authenticated and self.user.is_superuser or self.user.is_staff:
-            queryset = Message.objects.get(chat_group=self.chat_group)
-            return queryset
-        else:
-            self.define_membership_status(self.request.user, self.chat_group)
-            if self.is_member:
-                queryset = Message.objects.get(chat_group=self.chat_group)
-                return queryset
-        raise OnlyMembersAccess
-
-
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        assert lookup_url_kwarg in self.kwargs, (
-            'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
-            (self.__class__.__name__, lookup_url_kwarg)
-        )
-
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        try:
-            obj = queryset.get(**filter_kwargs)
-        except Message.DoesNotExist:
-            raise NoExistingMessage
-
-        self.check_object_permissions(self.request, obj)
-        self.find_owner_and_admins(self.request.user, self.chat_group)
-        return obj
+#         if self.user.is_authenticated and self.user.is_superuser or self.user.is_staff:
+#             queryset = Message.objects.get(chat_group=self.chat_group)
+#             return queryset
+#         else:
+#             self.define_membership_status(self.request.user, self.chat_group)
+#             if self.is_member:
+#                 queryset = Message.objects.get(chat_group=self.chat_group)
+#                 return queryset
+#         raise OnlyMembersAccess
 
 
-    def create(self, request, *args, **kwargs):
-        chat_group_pk = self.kwargs.get('chat_group_pk')
-        self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#     def get_object(self):
+#         queryset = self.filter_queryset(self.get_queryset())
 
-        fileList = list()
-        # fileList.append(serializer.validated_data.pop('file1', None))
-        # serializer.fields.pop('file1', None)
+#         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
-        # fileList.append(serializer.validated_data.pop('file2', None))
-        # serializer.fields.pop('file2', None)
+#         assert lookup_url_kwarg in self.kwargs, (
+#             'Expected view %s to be called with a URL keyword argument '
+#             'named "%s". Fix your URL conf, or set the `.lookup_field` '
+#             'attribute on the view correctly.' %
+#             (self.__class__.__name__, lookup_url_kwarg)
+#         )
 
-        # fileList.append(serializer.validated_data.pop('file3', None))
-        # serializer.fields.pop('file3', None)
+#         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+#         try:
+#             obj = queryset.get(**filter_kwargs)
+#         except Message.DoesNotExist:
+#             raise NoExistingMessage
 
-        # fileList.append(serializer.validated_data.pop('file4', None))
-        # serializer.fields.pop('file4', None)
+#         self.check_object_permissions(self.request, obj)
+#         self.find_owner_and_admins(self.request.user, self.chat_group)
+#         return obj
 
-        # fileList.append(serializer.validated_data.pop('file5', None))
-        # serializer.fields.pop('file5', None)
 
-        # serializer.save(chat_group=self.chat_group)
+#     def create(self, request, *args, **kwargs):
+#         chat_group_pk = self.kwargs.get('chat_group_pk')
+#         self.chat_group = self.find_chat_group_by_pk(chat_group_pk)
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
 
-        # fileList.remove(None)
-        # MessageFile.objects.bulk_create(
-        #     MessageFile
-        #     )
+#         fileList = list()
+#         # fileList.append(serializer.validated_data.pop('file1', None))
+#         # serializer.fields.pop('file1', None)
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+#         # fileList.append(serializer.validated_data.pop('file2', None))
+#         # serializer.fields.pop('file2', None)
+
+#         # fileList.append(serializer.validated_data.pop('file3', None))
+#         # serializer.fields.pop('file3', None)
+
+#         # fileList.append(serializer.validated_data.pop('file4', None))
+#         # serializer.fields.pop('file4', None)
+
+#         # fileList.append(serializer.validated_data.pop('file5', None))
+#         # serializer.fields.pop('file5', None)
+
+#         # serializer.save(chat_group=self.chat_group)
+
+#         # fileList.remove(None)
+#         # MessageFile.objects.bulk_create(
+#         #     MessageFile
+#         #     )
+
+#         headers = self.get_success_headers(serializer.data)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

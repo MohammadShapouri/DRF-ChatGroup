@@ -13,7 +13,7 @@ chat_group_pk_cahce.initial_caching_at_startup()
 
 router = routers.SimpleRouter()
 router.register('chatgroups', views.ChatGroupViewSet, basename='ChatGroup')
-router.register('members/<chat_group_pk>', views.MessageViewSet, basename='Member')
+# router.register('members/<chat_group_pk>', views.MessageViewSet, basename='Member')
 
 
 
@@ -39,21 +39,21 @@ chatGroupMemberViewSet_urlpatterns = [
 
 
 
-messageViewSet_list = views.MessageViewSet.as_view({
-	'get': 'list',
-	'post': 'create'
-	})
-messageViewSet_detail = views.MessageViewSet.as_view({
-	'get': 'retrieve',
-	'put': 'update',
-	'patch': 'partial_update',
-	'delete': 'destroy'
-	})
+# messageViewSet_list = views.MessageViewSet.as_view({
+# 	'get': 'list',
+# 	'post': 'create'
+# 	})
+# messageViewSet_detail = views.MessageViewSet.as_view({
+# 	'get': 'retrieve',
+# 	'put': 'update',
+# 	'patch': 'partial_update',
+# 	'delete': 'destroy'
+# 	})
 
-messageViewSet_urlpatterns = [
-	path('chatgroups/<int:chat_group_pk>/messages', messageViewSet_list, name='Message-list'),
-	path('chatgroups/<int:chat_group_pk>/messages/<int:pk>', messageViewSet_detail, name='Message-detail')
-]
+# messageViewSet_urlpatterns = [
+# 	path('chatgroups/<int:chat_group_pk>/messages', messageViewSet_list, name='Message-list'),
+# 	path('chatgroups/<int:chat_group_pk>/messages/<int:pk>', messageViewSet_detail, name='Message-detail')
+# ]
 
 
 
@@ -63,5 +63,5 @@ urlpatterns = [
 ]
 urlpatterns += router.urls
 urlpatterns += chatGroupMemberViewSet_urlpatterns
-urlpatterns += messageViewSet_urlpatterns
+# urlpatterns += messageViewSet_urlpatterns
 

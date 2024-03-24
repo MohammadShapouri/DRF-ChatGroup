@@ -45,7 +45,6 @@ class AdminsAndNormalMembersAccessRestriction(APIException):
     default_code = 'admins and normal members access denied'
 
 
-
 class NormalMembersDeletingAccessRestriction(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = {"detail": "Normal members of chat group can't remove other users."}
