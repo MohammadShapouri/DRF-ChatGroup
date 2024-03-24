@@ -72,6 +72,14 @@ __If you use windows, instead of using '_python3 -m_' and '_python3_', use '_pyt
 ### Database Tables Schema Picture:
 ![database tables schema picture](https://github.com/MohammadShapouri/DRF-ChatGroup/blob/main/docs/database-tables-schema.png?raw=true)
 
+### Swagger
+* Swagger is available in _127.0.0.1:8000_ when you run project.
+![swagger preview](https://github.com/MohammadShapouri/DRF-ChatGroup/blob/main/docs/ChatGroup-swagger-preview.png?raw=true)
+
+### Postman
+* Postman data is available in _docs_ folder. You can import and use it.
+
+
 
 
 ## Things to do in the future
