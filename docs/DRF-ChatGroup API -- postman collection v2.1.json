@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "9cf4089e-a1cc-4b5a-b6f7-8275f12fab4f",
-		"name": "DRF-SocialMedia",
+		"name": "DRF-ChatGroup API",
 		"description": "A user account management system based on the phone number validation in django rest framework.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22997140"
@@ -832,10 +832,20 @@
 				{
 					"name": "Get Specific ChatGroups",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/chatgroups/2",
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -847,7 +857,7 @@
 							"path": [
 								"api",
 								"chatgroups",
-								"2"
+								"{{ChatGroup ID}}"
 							]
 						}
 					},
@@ -861,7 +871,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzAyNjY4ODk5LCJpYXQiOjE3MDI2NjE2OTksImp0aSI6IjI4N2FmMzRlYzc3NzRiNTViY2U3MmM2NzI4NmQ3ZjFjIiwidXNlcl9pZCI6NH0.vihoCLX1UsHrbKT9csQbD2nBLIuRrCxaxdZ3VxuTy0A",
+									"value": "",
 									"type": "string"
 								}
 							]
@@ -914,7 +924,7 @@
 							]
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/chatgroups/2/",
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -926,7 +936,7 @@
 							"path": [
 								"api",
 								"chatgroups",
-								"2",
+								"{{ChatGroup ID}}",
 								""
 							]
 						}
@@ -936,6 +946,16 @@
 				{
 					"name": "Create ChatGroup",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1001,6 +1021,228 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Delete Specific ChatGroup",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"{{ChatGroup ID}}",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat Group Member",
+			"item": [
+				{
+					"name": "Get All Members of a Chat Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/chatgroupmembers",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"{{ChatGroup ID}}",
+								"chatgroupmembers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Members of a Chat Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/chatgroupmembers/{{ChatGroupMember ID}}",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"{{ChatGroup ID}}",
+								"chatgroupmembers",
+								"{{ChatGroupMember ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Specific Members of a Chat Group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "chat_group",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "user",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "access_level",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "member_nickname",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/chatgroupmembers/{{ChatGroupMember ID}}",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"{{ChatGroup ID}}",
+								"chatgroupmembers",
+								"{{ChatGroupMember ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Chat Group Member",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "chat_group",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "user",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "access_level",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "member_nickname",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/chatgroups/{{ChatGroup ID}}/chatgroupmembers",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"chatgroups",
+								"{{ChatGroup ID}}",
+								"chatgroupmembers"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
@@ -1028,11 +1270,21 @@
 	"variable": [
 		{
 			"key": "User ID",
-			"value": "2",
+			"value": "1",
 			"type": "string"
 		},
 		{
 			"key": "Picture ID",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "ChatGroup ID",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "ChatGroupMember ID",
 			"value": "1",
 			"type": "string"
 		}

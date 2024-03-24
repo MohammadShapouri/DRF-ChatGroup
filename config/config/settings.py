@@ -51,6 +51,10 @@ INSTALLED_APPS = [
     'userAccount.apps.UseraccountConfig',
     'otp.apps.OtpConfig',
     'chatGroup.apps.ChatgroupConfig',
+
+    'rest_framework_swagger',
+    'rest_framework',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
