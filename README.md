@@ -68,7 +68,13 @@ __If you use windows, instead of using '_python3 -m_' and '_python3_', use '_pyt
   ```
 
 
-# Things to do in the future
+## Document
+### Database Tables Schema Picture:
+![database tables schema picture](https://github.com/MohammadShapouri/DRF-ChatGroup/blob/main/docs/database-tables-schema.png?raw=true)
+
+
+
+## Things to do in the future
 * Dockerizing project. (Though it must be Dockerized after creating the project.)
 * Creating CRUD methods and classes using Django-channels for managing messages in each group.
 * Writing test cases. _Some parts are tested._
